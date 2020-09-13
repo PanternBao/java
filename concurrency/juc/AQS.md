@@ -4,7 +4,7 @@
 
 AQS核心思想是，如果被请求的共享资源空闲，那么就将请求资源的线程设置为有效的工作线程，将共享资源设置为锁定状态；如果共享资源被占用，就需要一定的阻塞等待唤醒机制来保证锁分配。
 
-![aqs](./aqs.png)
+![aqs](./pics/aqs/aqs.png)
 
 1. 如何表示共享资源的空闲状态
 2. 如何有效阻塞等待线程和唤醒
@@ -116,7 +116,7 @@ protected boolean tryAcquire(int arg) {
 
 线程执行Acquire(1)时，会通过tryAcquire获取锁。在这种情况下，如果尝试获取锁失败，就会调用addWaiter加入到等待队列中去。为了操作简单，队列中会存在虚拟的头节点。
 
-![addWaiter](./addWaiter.png)
+![addWaiter](./pics/aqs/addWaiter.png)
 
 具体实现方法如下：
 
@@ -190,7 +190,7 @@ public final boolean hasQueuedPredecessors() {
 
 以 acquireQueued 为例：
 
-![head](./head.png)
+![head](./pics/aqs/head.png)
 
 ```java
 final boolean acquireQueued(final Node node, int arg) {
@@ -262,7 +262,7 @@ private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
 
 加入队列后尝试获取锁失败，等待超时或中断，会将这个节点cancel掉。
 
-cancel节点会向前遍历找到第一个非cancelled节点，并找到这个节点的后继节点：
+cancel节点会向前遍历找到第一个非cancelled节点，并找到这个节点的后继节点，cancel节点的过程中，从tail开始的这个队列是不会断开的，会保持完整性：
 
 ```java
 if (node == null)
@@ -284,7 +284,7 @@ node.waitStatus = Node.CANCELLED;
 
 1. 若当前节点是尾节点
 
-![cancelTail](./cancelTail.png)
+![cancelTail](./pics/aqs/cancelTail.png)
 
 代码如下：
 
@@ -339,8 +339,6 @@ private void unparkSuccessor(Node node) {
     LockSupport.unpark(s.thread);
 }
 ```
-
-
 
 
 
