@@ -1,0 +1,10 @@
+select 1;
+drop table test;
+drop table global1;
+drop table cl_idx_data_monitor;
+drop table gtable;
+drop table sharding;
+drop table tb_global;
+drop table tb_global1;
+drop table tb_shard;
+drop table test1;
