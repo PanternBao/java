@@ -1,3 +1,45 @@
+
+
+## 平台无关性
+
+write once, run anyway Java 编译生成的二进制文件能够不做任何改变运行于多个平台。
+
+在计算机科学领域，有一句名言是“计算机科学领域的任何问题都可以通过增加一个间接的中间层来解决(All problems in computer science can be solved by another level of indirection)”，JVM 就是在这样的环境应运而生的。
+
+![java_compile](/Users/baofengqi/Documents/java/jvm/pic/java_compile.png)
+
+跨平台关键
+
+1. 对下：屏蔽不同os，不同平台不同实现，linux，mac os，windows
+2. 对上：jvm 和 字节码存储格式（二进制格式）统一
+
+java编译工具：javac
+
+### 字节码内容
+
+Class文件是一组以8位字节为基础的二进制流，紧密排列，没有分隔符
+
+class 文件的头四个字节称为魔数（Magic Number），可以看到 class 的**魔数**为 0xCAFEBABE。这个魔数是 JVM 识别 .class 文件的标志，虚拟机在加载类文件之前会先检查这四个字节，如果不是 0xCAFEBABE 则拒绝加载该文件
+
+javap 反编译
+
+```bash
+最常用的选项是-c，可以对类进行反编译
+
+默认情况下，javap 会显示访问权限为 public、protected 和默认（包级 protected）级别的方法，加上 -p 选项以后可以显示 private 方法和字段
+
+javap 加上 -v 参数的输出更多详细的信息，比如栈大小、方法参数的个数。
+javap 还有一个好用的选项 -s，可以输出签名的类型描述符。
+```
+
+字段描述符和方法描述符
+
+**字段描述符**（Field Descriptor），是一个表示类、实例或局部变量的语法符号，它的表示形式是紧凑的，比如 int 是用 I 表示的。完整的类型描述符如下表
+
+![descriptor](/Users/baofengqi/Documents/java/jvm/pic/descriptor.png)
+
+**方法描述符**（Method Descriptor）表示一个方法所需参数和返回值信息，表示形式为`( ParameterDescriptor* ) ReturnDescriptor`。 ParameterDescriptor 表示参数类型，ReturnDescriptor表示返回值信息，当没有返回值时用`V`表示。比如方法`Object foo(int i, double d, Thread t)`的描述符为`(IDLjava/lang/Thread;)Ljava/lang/Object;`
+
 java中存在大量的class，这里的class大多存在与硬盘上，因此用户如果需要使用这些类，jvm就需要把这些class 加载到内存中。
 
 引申出下面的问题：jvm何时将何处的class如何加载到内存中。

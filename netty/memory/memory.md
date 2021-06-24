@@ -8,29 +8,53 @@
 
 2. 可以减少gc的压力
 
-## Arena
-
-顾名思义，PoolArena负责缓存池的全局调度，它负责在上层组织和管理所有的chunk以及subpage单元。为了减少多线程请求内存池时的同步处理，Netty默认提供了cpu核数*2个PoolArena实例。
-
-> We use 2 *available processors by default to reduce contention as we use 2* available processors for the number of EventLoops in NIO and EPOLL as well. If we choose a smaller number we will run into hot spots as allocation and de-allocation needs to be synchronized on the PoolArena.
-
-PoolArena 内部对chunk与subpage的内存组织方式如下图：
-
-![1564636926961](/home/collapsar/.config/Typora/typora-user-images/1564636926961.png)
-
 应用层的内存分配主要通过如下实现，但最终还是委托给PoolArena实现。
 
 ```
 PooledByteBufAllocator.DEFAULT.directBuffer(128);
 ```
 
+
+
+## Arena
+
+顾名思义，PoolArena负责缓存池的全局调度，它负责在上层组织和管理所有的chunk以及subpage单元。为了减少多线程请求内存池时的同步处理，Netty默认提供了cpu核数*2个PoolArena实例。
+
+> We use 2 *available processors by default to reduce contention as we use 2* available processors for the number of EventLoops in NIO and EPOLL as well. If we choose a smaller number we will run into hot spots as allocation and de-allocation needs to be synchronized on the PoolArena.
+
 由于netty通常应用于高并发系统，不可避免的有多线程进行同时内存分配，可能会极大的影响内存分配的效率，为了缓解线程竞争，可以通过创建多个poolArena细化锁的粒度，提高并发执行的效率。
+
+Netty中将内存池分为五种不同的形态:Arena,ChunkList,Chunk,Page,SubPage.
+
+PoolArena 内部对chunk与subpage的内存组织方式如下图：
+
+![pool_arena](pics/pool_arena.png)
+
+默认arena个数：2* 核心数
+
+默认page大小：8192，8k
+
+默认chunk size： 8k <<11(MAX_ORDER) = 16M
+
+smallcachesize 256
+
+Tinycachesize:0
+
+Normalcachesize:64
 
 先看看poolArena的内部结构：
 
-![1564672056813](/home/collapsar/.config/Typora/typora-user-images/1564672056813.png)
-
 poolArena提供了两种方式进行内存分配：
+
+![netty_jemalloc3](pics/netty_jemalloc3.png)
+
+
+
+![netty_jemalloc4](pics/netty_jemalloc4.png)
+
+
+
+
 
 1. PoolSubpage用于分配小于8k的内存；
 
@@ -61,8 +85,6 @@ for (int i = 0; i < smallSubpagePools.length; i ++) {
 - q050：存储内存利用率50-100%的chunk
 - q075：存储内存利用率75-100%的chunk
 - q100：存储内存利用率100%的chunk
-
-![1564672145288](/home/collapsar/.config/Typora/typora-user-images/1564672145288.png)
 
 1. qInit前置节点为自己，且minUsage=Integer.MIN_VALUE，意味着一个初分配的chunk，在最开始的内存分配过程中(内存使用率<25%)，即使完全释放也不会被回收，会始终保留在内存中。
 2. q000没有前置节点，当一个chunk进入到q000列表，如果其内存被完全释放，则不再保留在内存中，其分配的内存被完全回收。
